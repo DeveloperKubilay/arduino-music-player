@@ -1,5 +1,7 @@
 # 🎹 MIDI to Arduino Converter 🔊
 
+https://youtu.be/Q7Bp5CiCzNs
+
 This dope project lets you convert your fav MIDI tracks to Arduino code! Blast those tunes through a buzzer, no cap! 🔥
 
 ## ✨ Features
