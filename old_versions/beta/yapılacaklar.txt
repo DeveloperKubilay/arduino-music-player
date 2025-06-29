@@ -1,0 +1,1 @@
+direk com ile serial komut yollama yapsın chrome ise 

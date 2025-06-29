@@ -1,141 +1,70 @@
-# � MIDI to Arduino Müzik Çevirici
+# 🎹 MIDI to Arduino Converter 🔊
 
-MIDI (.mid) dosyalarını Arduino piezo buzzer kodu haline çeviren otomatik sistem.
+This dope project lets you convert your fav MIDI tracks to Arduino code! Blast those tunes through a buzzer, no cap! 🔥
 
-## 📋 Özellikler
+## ✨ Features
 
-- ✅ MIDI formatından Arduino koduna otomatik çevirme  
-- ✅ Tempo otomatik algılama + manuel ayarlama
-- ✅ Çoklu track desteği (track seçebilirsin)
-- ✅ Tüm nota tanımları dahil (C1-C8)
-- ✅ MIDI note on/off event işleme
-- ✅ Serial monitor ile debug bilgileri
-- ✅ Otomatik tekrar çalma
-- ✅ Non-blocking kod (Arduino diğer işlemleri yapabilir)
+- 🎵 Upload any MIDI file and convert it to Arduino-ready code
+- 🎚️ Select specific tracks from your MIDI
+- 🧠 Smart melody extraction modes:
+  - 💯 Smart mode (default) - picks the best notes
+  - 🔝 Highest note mode - always grabs the highest notes
+  - 💪 Loudest note mode - prioritizes the loudest notes
+  - 🎛️ All notes mode - tries to include everything
+- ⏱️ Auto-detects or manually set BPM
+- 🔄 Optional looping playback
+- ⬇️ Download Arduino code as .ino file
+- 📋 Copy code to clipboard
 
-## 🚀 Kurulum
+## 🚀 How to Use
 
-```bash
-npm install xml2js midi-parser-js
-```
+1. Drop your MIDI file into the converter
+2. Choose your track (if multiple tracks exist)
+3. Select melody extraction mode
+4. Hit that "Convert to Arduino Code" button
+5. Download or copy the generated code
+6. Upload to your Arduino
+7. Vibe to your tunes! 🎶
 
-## 💻 Kullanım
+## 🔌 Circuit Setup
 
-### 🎹 MIDI Çevirme (Ana Özellik)
-```bash
-node midi-to-arduino.js music.mid
-```
-- music.mid → music.ino (otomatik tempo + track 0)
+Super basic - just connect:
+- Piezo buzzer positive (+) leg to Arduino pin 11
+- Piezo buzzer negative (-) leg to Arduino GND
 
-### 🎹 Gelişmiş MIDI Çevirme
-```bash
-node midi-to-arduino.js [midi-dosyası] [tempo] [track]
-```
+## ⚙️ Technical Details
 
-**Örnekler:**
-```bash
-node midi-to-arduino.js song.mid
-node midi-to-arduino.js jazz.mid 120  
-node midi-to-arduino.js symphony.mid 90 1  # 1. track, 90 BPM
-```
+- Uses a lightweight MIDI parser to extract note data
+- Converts MIDI note numbers to Arduino frequency constants
+- Calculates note durations based on tempo
+- Intelligently extracts melody from complex MIDI files
+- Limits output to fit Arduino's memory constraints (max ~512 notes)
 
-### 🎵 XML Çevirme (Eski Versiyon)
-```bash
-node xml-to-arduino.js score.xml output.ino 105
-```
+## 🛑 Limitations
 
-## 🔌 Arduino Bağlantısı
+- Memory: Arduino has limited memory, so very long songs might be truncated
+- Polyphony: Basic Arduino can only play one note at a time
+- Complexity: Some complex MIDI files might not convert perfectly
 
-```
-Arduino Uno    Piezo Buzzer
-Pin 2     -->  Pozitif (+)
-GND       -->  Negatif (-)
-```
+## 🤔 Tips for Best Results
 
-## 📁 Dosya Yapısı
+- Simple MIDI files work best
+- Try different melody extraction modes for best sound
+- If your song has too many notes, consider using a shorter section
 
-```
-📂 arduinonota/
-├── � midi-to-arduino.js       # Ana MIDI çevirici
-├── 🎹 midi-demo.js             # MIDI demo ve bilgi
-├── 🎼 xml-to-arduino.js        # XML çevirici (eski)
-├── 🔧 arduino-generator.js     # Basit çevirici
-├── 📝 index.js                 # XML okuyucu
-├── 📤 output.txt              # Ham nota çıktısı
-├── 🎵 *.ino                   # Üretilen Arduino kodları
-└── 📖 README.md               # Bu dosya
-```
+## 🎵 Where to Find MIDI Files
 
-## ⚙️ Script Detayları
+You can use any MIDI files you want! Here are some fire resources to get you started:
 
-### 🎹 midi-to-arduino.js (Ana Script)
-- MIDI parser ile Note On/Off events
-- Otomatik tempo algılama
-- Track seçimi (0,1,2...)
-- MIDI note → Arduino frequency çevirimi
-- Delta time → duration hesaplama
+- 🔥 **Online Sequencer**: Check out [Online Sequencer](https://onlinesequencer.net/sequences) - tons of community-created tunes you can download as MIDI
+- 🎮 Video game music archives
+- 🎸 Classical music libraries
+- 🎧 Create your own using DAW software
 
-### 🎼 xml-to-arduino.js (XML Desteği)  
-- MusicXML parsing
-- Şarkı adı otomatik algılama
-- REST nota desteği
+To download from Online Sequencer:
+1. Find a sequence you like
+2. Click on the three dots menu (...)
+3. Select "Download" and then "MIDI"
+4. Upload that file to our converter and you're good to go!
 
-## 🎼 Desteklenen Formatlar
-
-**Ana Giriş:** MIDI (.mid, .midi) 🎹
-**Ek Giriş:** MusicXML (.xml, .musicxml) 🎵  
-**Çıkış:** Arduino C++ (.ino) 🔧
-
-## 🔥 Örnekler
-
-### 🎹 MIDI Çevirme
-```bash
-# Basit çevirme
-node midi-to-arduino.js song.mid
-
-# Tempo ayarlı  
-node midi-to-arduino.js song.mid 120
-
-# Track seçimli
-node midi-to-arduino.js song.mid 90 1
-```
-
-### 🎵 XML Çevirme
-```bash
-node xml-to-arduino.js score.xml steel.ino 105
-```
-**Sonuç:** 204 nota, 32 ölçü ✅
-
-## 🛠️ Teknik Detaylar
-
-**Nota Frekansları:** 31Hz (NOTE_B0) - 4978Hz (NOTE_DS8)
-**Tempo Formülü:** `(60000 * 4) / tempo`
-**Süre Hesaplama:** `wholenote / divider`
-**Non-blocking:** `millis()` tabanlı zamanlama
-
-## 🎯 İpuçları
-
-1. **MIDI Dosyası:** freemidi.org, midiworld.com'dan indir 🎹
-2. **Buzzer Seçimi:** Aktif/pasif piezo buzzer kullanın 🔊
-3. **Tempo:** Yavaş şarkılar için 60-90, hızlı için 120-150 BPM ⚡
-4. **Track Seçimi:** Melody track'i seç, drum tracklerinden kaçın 🥁
-5. **Ses Kalitesi:** 500-2000Hz arası notalar en net çıkar 🎵
-6. **Debug:** Serial Monitor'da nota bilgilerini izleyin 📺
-7. **Format:** MIDI Format 0 veya 1 kullan, Format 2 desteklenmiyor ⚠️
-
-## 🤝 Katkıda Bulunma
-
-1. Fork et 🍴
-2. Feature branch oluştur 🌿
-3. Commit et 💾
-4. Push et 🚀  
-5. Pull request aç 📬
-
-## 📜 Lisans
-
-MIT License - Özgürce kullan! 🎉
-
----
-
-**Made with 💖 by Arduino Music Lovers**
-"# arduino-music-player" 
+Not all MIDI files will sound perfect - simpler melodies with clear lead parts work best for Arduino buzzers!

@@ -1,0 +1,17 @@
+{
+  "name": "notasiken",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "description": "",
+  "dependencies": {
+    "midi-parser-js": "^4.0.4",
+    "xml2js": "^0.6.2"
+  }
+}

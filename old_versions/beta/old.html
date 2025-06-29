@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎹 MIDI to Arduino Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .settings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .setting-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input, select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .output {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .output-header h3 {
+            margin: 0;
+            color: #333;
+        }
+
+        .output-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .status {
+            background: #e8f5e8;
+            border: 1px solid #28a745;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .arduino-code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 0;
+            border: 1px solid #4a5568;
+        }
+
+        .copy-btn {
+            background: #17a2b8;
+        }
+
+        .copy-btn:hover {
+            background: #138496;
+        }
+
+        .copy-btn.copied {
+            background: #28a745;
+        }
+
+        .download-btn {
+            background: #28a745;
+            margin-top: 10px;
+        }
+
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .success {
+            color: #155724;
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎹 MIDI to Arduino Converter</h1>
+        
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <h3>🎵 MIDI Dosyasını Sürükle veya Tıkla</h3>
+            <p>Desteklenen format: .mid, .midi</p>
+            <input type="file" id="fileInput" accept=".mid,.midi" />
+        </div>
+
+        <div class="settings">
+            <div class="setting-group">
+                <label for="tempo">⚡ Tempo (BPM)</label>
+                <input type="number" id="tempo" value="120" min="60" max="200" />
+            </div>
+        </div>
+
+        <button class="btn" onclick="convertMidi()">🚀 Arduino Kodunu Oluştur</button>
+
+        <div class="progress" id="progressContainer" style="display: none;">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div class="status" id="status" style="display: none;">
+            <div id="statusMessage"></div>
+        </div>
+        
+        <div class="output" id="output" style="display: none;">
+            <div class="output-header">
+                <h3>📄 Arduino Kodu</h3>
+                <div class="output-buttons">
+                    <button class="btn copy-btn" onclick="copyCode()">📋 Kodu Kopyala</button>
+                    <button class="btn download-btn" onclick="downloadCode()">💾 .ino İndir</button>
+                </div>
+            </div>
+            <pre class="arduino-code" id="arduinoCode"></pre>
+        </div>
+    </div>
+
+    <script>
+        // Kendi MIDI parser'ımız - daha güvenilir
+        const MidiParser = {
+            parse: function(data) {
+                const view = new DataView(data.buffer || data);
+                let offset = 0;
+                
+                // Header okuma
+                const headerChunk = this.readChunk(view, offset);
+                if (headerChunk.type !== 'MThd') {
+                    throw new Error('Invalid MIDI file - missing MThd header');
+                }
+                offset += 8 + headerChunk.length;
+                
+                const formatType = view.getUint16(8, false);
+                const trackCount = view.getUint16(10, false);
+                const timeDivision = view.getUint16(12, false);
+                
+                const midi = {
+                    formatType: formatType,
+                    timeDivision: timeDivision,
+                    track: []
+                };
+                
+                // Track'leri okuma
+                for (let i = 0; i < trackCount; i++) {
+                    try {
+                        const trackChunk = this.readChunk(view, offset);
+                        if (trackChunk.type !== 'MTrk') {
+                            // MTrk bulamazsa sonraki chunk'ı ara
+                            console.warn(`Track ${i}: MTrk header not found at offset ${offset}, searching...`);
+                            const foundOffset = this.findNextMTrk(view, offset);
+                            if (foundOffset === -1) {
+                                console.warn(`Track ${i}: No more MTrk chunks found`);
+                                break;
+                            }
+                            offset = foundOffset;
+                            const newTrackChunk = this.readChunk(view, offset);
+                            if (newTrackChunk.type !== 'MTrk') {
+                                throw new Error(`Track ${i}: Still not MTrk after search`);
+                            }
+                            offset += 8;
+                            const events = this.parseTrackEvents(view, offset, newTrackChunk.length);
+                            midi.track.push({ event: events });
+                            offset += newTrackChunk.length;
+                        } else {
+                            offset += 8;
+                            const events = this.parseTrackEvents(view, offset, trackChunk.length);
+                            midi.track.push({ event: events });
+                            offset += trackChunk.length;
+                        }
+                    } catch (error) {
+                        console.warn(`Track ${i} parsing error:`, error.message);
+                        // Hatalı track'i atla ve devam et
+                        break;
+                    }
+                }
+                
+                return midi;
+            },
+            
+            readChunk: function(view, offset) {
+                const type = String.fromCharCode(
+                    view.getUint8(offset),
+                    view.getUint8(offset + 1),
+                    view.getUint8(offset + 2),
+                    view.getUint8(offset + 3)
+                );
+                const length = view.getUint32(offset + 4, false);
+                return { type: type, length: length };
+            },
+            
+            findNextMTrk: function(view, startOffset) {
+                for (let i = startOffset; i < view.byteLength - 4; i++) {
+                    if (view.getUint8(i) === 0x4D && // M
+                        view.getUint8(i + 1) === 0x54 && // T
+                        view.getUint8(i + 2) === 0x72 && // r
+                        view.getUint8(i + 3) === 0x6B) { // k
+                        return i;
+                    }
+                }
+                return -1;
+            },
+            
+            parseTrackEvents: function(view, offset, length) {
+                const events = [];
+                let pos = offset;
+                const endPos = offset + length;
+                let runningStatus = 0;
+                
+                while (pos < endPos) {
+                    try {
+                        // Delta time okuma
+                        const deltaTime = this.readVariableLength(view, pos);
+                        pos += deltaTime.bytesRead;
+                        
+                        // Event type okuma
+                        let eventType = view.getUint8(pos);
+                        pos++;
+                        
+                        // Running status kontrolü
+                        if (eventType < 0x80) {
+                            pos--; // Byte'ı geri al
+                            eventType = runningStatus;
+                        } else {
+                            runningStatus = eventType;
+                        }
+                        
+                        const event = {
+                            deltaTime: deltaTime.value,
+                            type: eventType & 0xF0,
+                            channel: eventType & 0x0F,
+                            data: []
+                        };
+                        
+                        // Event data okuma
+                        if (eventType === 0xFF) { // Meta event
+                            const metaType = view.getUint8(pos);
+                            pos++;
+                            const dataLength = this.readVariableLength(view, pos);
+                            pos += dataLength.bytesRead;
+                            
+                            event.type = metaType;
+                            for (let i = 0; i < dataLength.value; i++) {
+                                event.data.push(view.getUint8(pos + i));
+                            }
+                            pos += dataLength.value;
+                        } else if (eventType >= 0xF0) { // SysEx
+                            const dataLength = this.readVariableLength(view, pos);
+                            pos += dataLength.bytesRead;
+                            pos += dataLength.value; // SysEx data'yı atla
+                        } else { // Channel event
+                            const dataBytes = this.getEventDataBytes(eventType & 0xF0);
+                            for (let i = 0; i < dataBytes; i++) {
+                                if (pos < endPos) {
+                                    event.data.push(view.getUint8(pos));
+                                    pos++;
+                                }
+                            }
+                        }
+                        
+                        events.push(event);
+                    } catch (error) {
+                        console.warn('Event parsing error:', error.message);
+                        break;
+                    }
+                }
+                
+                return events;
+            },
+            
+            readVariableLength: function(view, offset) {
+                let value = 0;
+                let bytesRead = 0;
+                
+                while (bytesRead < 4) {
+                    const byte = view.getUint8(offset + bytesRead);
+                    value = (value << 7) | (byte & 0x7F);
+                    bytesRead++;
+                    
+                    if ((byte & 0x80) === 0) break;
+                }
+                
+                return { value: value, bytesRead: bytesRead };
+            },
+            
+            getEventDataBytes: function(eventType) {
+                switch (eventType) {
+                    case 0x80: // Note Off
+                    case 0x90: // Note On  
+                    case 0xA0: // Aftertouch
+                    case 0xB0: // Control Change
+                    case 0xE0: // Pitch Bend
+                        return 2;
+                    case 0xC0: // Program Change
+                    case 0xD0: // Channel Pressure
+                        return 1;
+                    default:
+                        return 0;
+                }
+            }
+        };
+    </script>
+    <script>
+        let midiData = null;
+        let generatedCode = '';
+        let fileName = '';
+
+        // MIDI note numaralarını Arduino notalarına çevir
+        const midiToArduino = {
+            12: 'NOTE_C1', 24: 'NOTE_C2', 36: 'NOTE_C3', 48: 'NOTE_C4', 
+            60: 'NOTE_C5', 72: 'NOTE_C6', 84: 'NOTE_C7', 96: 'NOTE_C8',
+            13: 'NOTE_CS1', 25: 'NOTE_CS2', 37: 'NOTE_CS3', 49: 'NOTE_CS4',
+            61: 'NOTE_CS5', 73: 'NOTE_CS6', 85: 'NOTE_CS7', 97: 'NOTE_CS8',
+            14: 'NOTE_D1', 26: 'NOTE_D2', 38: 'NOTE_D3', 50: 'NOTE_D4',
+            62: 'NOTE_D5', 74: 'NOTE_D6', 86: 'NOTE_D7', 98: 'NOTE_D8',
+            15: 'NOTE_DS1', 27: 'NOTE_DS2', 39: 'NOTE_DS3', 51: 'NOTE_DS4',
+            63: 'NOTE_DS5', 75: 'NOTE_DS6', 87: 'NOTE_DS7', 99: 'NOTE_DS8',
+            16: 'NOTE_E1', 28: 'NOTE_E2', 40: 'NOTE_E3', 52: 'NOTE_E4',
+            64: 'NOTE_E5', 76: 'NOTE_E6', 88: 'NOTE_E7', 100: 'NOTE_E8',
+            17: 'NOTE_F1', 29: 'NOTE_F2', 41: 'NOTE_F3', 53: 'NOTE_F4',
+            65: 'NOTE_F5', 77: 'NOTE_F6', 89: 'NOTE_F7', 101: 'NOTE_F8',
+            18: 'NOTE_FS1', 30: 'NOTE_FS2', 42: 'NOTE_FS3', 54: 'NOTE_FS4',
+            66: 'NOTE_FS5', 78: 'NOTE_FS6', 90: 'NOTE_FS7', 102: 'NOTE_FS8',
+            19: 'NOTE_G1', 31: 'NOTE_G2', 43: 'NOTE_G3', 55: 'NOTE_G4',
+            67: 'NOTE_G5', 79: 'NOTE_G6', 91: 'NOTE_G7', 103: 'NOTE_G8',
+            20: 'NOTE_GS1', 32: 'NOTE_GS2', 44: 'NOTE_GS3', 56: 'NOTE_GS4',
+            68: 'NOTE_GS5', 80: 'NOTE_GS6', 92: 'NOTE_GS7', 104: 'NOTE_GS8',
+            21: 'NOTE_A1', 33: 'NOTE_A2', 45: 'NOTE_A3', 57: 'NOTE_A4',
+            69: 'NOTE_A5', 81: 'NOTE_A6', 93: 'NOTE_A7', 105: 'NOTE_A8',
+            22: 'NOTE_AS1', 34: 'NOTE_AS2', 46: 'NOTE_AS3', 58: 'NOTE_AS4',
+            70: 'NOTE_AS5', 82: 'NOTE_AS6', 94: 'NOTE_AS7', 106: 'NOTE_AS8',
+            23: 'NOTE_B1', 35: 'NOTE_B2', 47: 'NOTE_B3', 59: 'NOTE_B4',
+            71: 'NOTE_B5', 83: 'NOTE_B6', 95: 'NOTE_B7', 107: 'NOTE_B8'
+        };
+
+        // Drag & Drop
+        const uploadArea = document.querySelector('.upload-area');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.name.toLowerCase().endsWith('.mid') && !file.name.toLowerCase().endsWith('.midi')) {
+                showError('❌ Sadece .mid veya .midi dosyaları destekleniyor!');
+                return;
+            }
+
+            fileName = file.name.replace(/\.(mid|midi)$/i, '');
+            showStatus('🎹 MIDI dosyası yüklendi: ' + file.name);
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    midiData = new Uint8Array(e.target.result);
+                    showStatus('✅ Dosya başarıyla okundu (' + midiData.length + ' byte)');
+                } catch (error) {
+                    showError('❌ Dosya okuma hatası: ' + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function convertMidi() {
+            if (!midiData) {
+                showError('❌ Önce bir MIDI dosyası yükle!');
+                return;
+            }
+
+            showProgress(true);
+            updateProgress(10);
+            
+            const tempo = parseInt(document.getElementById('tempo').value) || 120;
+            const trackNumber = 0; // Her zaman ilk track kullan
+            const melodyMode = 'smart'; // Her zaman smart mode kullan
+
+            try {
+                showStatus('🎵 MIDI analiz ediliyor...');
+                updateProgress(30);
+
+                const midi = MidiParser.parse(midiData);
+                
+                updateProgress(50);
+
+                let tracks = midi.track || [];
+                if (!Array.isArray(tracks)) {
+                    throw new Error('Track dizisi bulunamadı');
+                }
+                
+                tracks = tracks.map(track => track.event || track);
+
+                if (trackNumber >= tracks.length) {
+                    throw new Error(`Track ${trackNumber} bulunamadı. Mevcut trackler: 0-${tracks.length - 1}`);
+                }
+
+                updateProgress(70);
+
+                // Tempo bilgisini al
+                let bpm = tempo;
+                tracks.forEach((trackEvents, index) => {
+                    if (!Array.isArray(trackEvents)) return;
+                    
+                    trackEvents.forEach(event => {
+                        if (event.type === 81 || event.type === 0x51) { // Set Tempo
+                            if (event.data && event.data.length >= 3) {
+                                const microsecondsPerBeat = (event.data[0] << 16) | (event.data[1] << 8) | event.data[2];
+                                bpm = Math.round(60000000 / microsecondsPerBeat);
+                            }
+                        }
+                    });
+                });
+
+                if (tempo !== 120) {
+                    bpm = tempo;
+                }
+
+                const selectedTrack = tracks[trackNumber];
+
+                updateProgress(80);
+
+                // Notaları çıkart
+                const melodyNotes = extractMelody(selectedTrack, midi, melodyMode);
+
+                if (melodyNotes.length === 0) {
+                    throw new Error('Hiç nota bulunamadı! Başka bir track dene.');
+                }
+
+                updateProgress(90);
+
+                // Arduino kodunu oluştur
+                const arduinoMelody = melodyNotes.map(note => {
+                    if (note.isRest) {
+                        return `  REST, ${note.duration}`;
+                    } else {
+                        return `  ${note.note}, ${note.duration}`;
+                    }
+                });
+                generatedCode = generateArduinoCode(fileName, arduinoMelody, bpm, trackNumber);
+
+                updateProgress(100);
+
+                document.getElementById('arduinoCode').textContent = generatedCode;
+                document.getElementById('output').style.display = 'block';
+
+                showStatus(`� ${melodyNotes.length} nota ile Arduino kodu hazır! 🚀`);
+
+                setTimeout(() => showProgress(false), 1000);
+
+            } catch (error) {
+                showError('❌ MIDI işleme hatası: ' + error.message);
+                showProgress(false);
+            }
+        }
+
+        function extractMelody(selectedTrack, midi, melodyMode) {
+            let melodyNotes = [];
+            let currentTime = 0;
+            let timeEvents = []; // Zaman bazlı eventler
+            
+            // Tüm note eventlerini zaman bazlı topla
+            selectedTrack.forEach(event => {
+                currentTime += event.deltaTime;
+                
+                if ((event.type === 0x90 || event.type === 144) && event.data && event.data[1] > 0) { // Note On
+                    const noteNumber = event.data[0];
+                    const velocity = event.data[1];
+                    
+                    if (midiToArduino[noteNumber]) {
+                        timeEvents.push({
+                            time: currentTime,
+                            type: 'noteOn',
+                            note: noteNumber,
+                            velocity: velocity,
+                            arduino: midiToArduino[noteNumber]
+                        });
+                    }
+                } else if ((event.type === 0x80 || event.type === 128) || 
+                           ((event.type === 0x90 || event.type === 144) && event.data && event.data[1] === 0)) { // Note Off
+                    const noteNumber = event.data[0];
+                    
+                    if (midiToArduino[noteNumber]) {
+                        timeEvents.push({
+                            time: currentTime,
+                            type: 'noteOff',
+                            note: noteNumber,
+                            arduino: midiToArduino[noteNumber]
+                        });
+                    }
+                }
+            });
+            
+            timeEvents.sort((a, b) => a.time - b.time);
+            
+            // Zaman bazlı melody oluştur
+            let activeNotes = new Map();
+            let lastEventTime = 0;
+            
+            for (let i = 0; i < timeEvents.length; i++) {
+                const event = timeEvents[i];
+                const timeDelta = event.time - lastEventTime;
+                
+                // Eğer önceki event'ten sonra boşluk varsa, REST ekle veya son REST'i uzat
+                if (timeDelta > 0) {
+                    const restDurationMs = (timeDelta / midi.timeDivision) * (60000 / 120) * 0.2; // REST faktörü 0.5 - daha kısa REST
+                    if (restDurationMs > 30) { // Sadece 30ms üzeri boşluklar için REST ekle (eşik düşürüldü)
+                        const restDuration = Math.max(1, Math.min(16, Math.round(restDurationMs / 100))); // Maksimum 16 birim
+                        
+                        // Son nota REST ise uzat, değilse yeni REST ekle
+                        if (melodyNotes.length > 0 && melodyNotes[melodyNotes.length - 1].isRest) {
+                            melodyNotes[melodyNotes.length - 1].duration += restDuration;
+                            // REST'leri çok uzatma - maksimum 16 birimle sınırla
+                            if (melodyNotes[melodyNotes.length - 1].duration > 16) {
+                                melodyNotes[melodyNotes.length - 1].duration = 16;
+                            }
+                        } else {
+                            melodyNotes.push({
+                                note: 'REST',
+                                duration: restDuration,
+                                time: lastEventTime,
+                                isRest: true
+                            });
+                        }
+                    }
+                }
+                
+                if (event.type === 'noteOn') {
+                    activeNotes.set(event.note, {
+                        startTime: event.time,
+                        velocity: event.velocity,
+                        arduino: event.arduino,
+                        pitch: event.note
+                    });
+                } else if (event.type === 'noteOff' && activeNotes.has(event.note)) {
+                    const noteInfo = activeNotes.get(event.note);
+                    const noteDuration = event.time - noteInfo.startTime;
+                    
+                    // Nota süresini hesapla (gerçek zamanlama)
+                    const durationMs = (noteDuration / midi.timeDivision) * (60000 / 120); // 120 BPM base
+                    let arduinoDuration = Math.max(1, Math.min(32, Math.round(durationMs / 100))); // 100ms units
+                    
+                    // Aynı anda çalan notalardan melody seç
+                    let selectedNote = noteInfo;
+                    if (activeNotes.size > 1) {
+                        const candidates = Array.from(activeNotes.values());
+                        
+                        if (melodyMode === 'highest') {
+                            const highestPitch = Math.max(...candidates.map(n => n.pitch));
+                            selectedNote = candidates.find(n => n.pitch === highestPitch);
+                        } else if (melodyMode === 'loudest') {
+                            selectedNote = candidates.reduce((prev, curr) => 
+                                curr.velocity > prev.velocity ? curr : prev
+                            );
+                        } else { // smart mode
+                            const highestPitch = Math.max(...candidates.map(n => n.pitch));
+                            const highPitchNotes = candidates.filter(n => n.pitch === highestPitch);
+                            
+                            if (highPitchNotes.length === 1) {
+                                selectedNote = highPitchNotes[0];
+                            } else {
+                                selectedNote = highPitchNotes.reduce((prev, curr) => 
+                                    curr.velocity > prev.velocity ? curr : prev
+                                );
+                            }
+                        }
+                    }
+                    
+                    // Sadece seçilen notayı ekle
+                    if (selectedNote === noteInfo) {
+                        melodyNotes.push({
+                            note: selectedNote.arduino,
+                            duration: arduinoDuration,
+                            time: selectedNote.startTime,
+                            velocity: selectedNote.velocity
+                        });
+                    }
+                    
+                    activeNotes.delete(event.note);
+                    lastEventTime = event.time;
+                }
+            }
+            
+            // Son optimizasyon: Arka arkaya gelen REST'leri birleştir ve maksimum süreyi sınırla
+            let optimizedNotes = [];
+            for (let i = 0; i < melodyNotes.length; i++) {
+                const currentNote = melodyNotes[i];
+                
+                if (currentNote.isRest && optimizedNotes.length > 0 && optimizedNotes[optimizedNotes.length - 1].isRest) {
+                    // Son nota da REST ise, sürelerini topla ama maksimum sınırla
+                    optimizedNotes[optimizedNotes.length - 1].duration = Math.min(16, optimizedNotes[optimizedNotes.length - 1].duration + currentNote.duration);
+                } else {
+                    // Normal nota veya ilk REST ise direkt ekle
+                    optimizedNotes.push(currentNote);
+                }
+            }
+            
+            return optimizedNotes;
+        }
+
+        function generateArduinoCode(songTitle, melodyArray, tempo, track) {
+            return `/*
+  🎹 ${songTitle}
+  MIDI'den otomatik çevrilen Arduino müzik çalar
+  Piezo buzzer -> Pin 11
+  Tempo: ${tempo} BPM
+  Track: ${track}
+  
+  Bağlantı:
+  - Buzzer (+) -> Pin 11  
+  - Buzzer (-) -> GND
+*/
+
+int tempo = ${tempo};
+int buzzerPin = 11;
+
+// Tüm nota tanımları
+#define NOTE_B0  31
+#define NOTE_C1  33
+#define NOTE_CS1 35
+#define NOTE_D1  37
+#define NOTE_DS1 39
+#define NOTE_E1  41
+#define NOTE_F1  44
+#define NOTE_FS1 46
+#define NOTE_G1  49
+#define NOTE_GS1 52
+#define NOTE_A1  55
+#define NOTE_AS1 58
+#define NOTE_B1  62
+#define NOTE_C2  65
+#define NOTE_CS2 69
+#define NOTE_D2  73
+#define NOTE_DS2 78
+#define NOTE_E2  82
+#define NOTE_F2  87
+#define NOTE_FS2 93
+#define NOTE_G2  98
+#define NOTE_GS2 104
+#define NOTE_A2  110
+#define NOTE_AS2 117
+#define NOTE_B2  123
+#define NOTE_C3  131
+#define NOTE_CS3 139
+#define NOTE_D3  147
+#define NOTE_DS3 156
+#define NOTE_E3  165
+#define NOTE_F3  175
+#define NOTE_FS3 185
+#define NOTE_G3  196
+#define NOTE_GS3 208
+#define NOTE_A3  220
+#define NOTE_AS3 233
+#define NOTE_B3  247
+#define NOTE_C4  262
+#define NOTE_CS4 277
+#define NOTE_D4  294
+#define NOTE_DS4 311
+#define NOTE_E4  330
+#define NOTE_F4  349
+#define NOTE_FS4 370
+#define NOTE_G4  392
+#define NOTE_GS4 415
+#define NOTE_A4  440
+#define NOTE_AS4 466
+#define NOTE_B4  494
+#define NOTE_C5  523
+#define NOTE_CS5 554
+#define NOTE_D5  587
+#define NOTE_DS5 622
+#define NOTE_E5  659
+#define NOTE_F5  698
+#define NOTE_FS5 740
+#define NOTE_G5  784
+#define NOTE_GS5 831
+#define NOTE_A5  880
+#define NOTE_AS5 932
+#define NOTE_B5  988
+#define NOTE_C6  1047
+#define NOTE_CS6 1109
+#define NOTE_D6  1175
+#define NOTE_DS6 1245
+#define NOTE_E6  1319
+#define NOTE_F6  1397
+#define NOTE_FS6 1480
+#define NOTE_G6  1568
+#define NOTE_GS6 1661
+#define NOTE_A6  1760
+#define NOTE_AS6 1865
+#define NOTE_B6  1976
+#define NOTE_C7  2093
+#define NOTE_CS7 2217
+#define NOTE_D7  2349
+#define NOTE_DS7 2489
+#define NOTE_E7  2637
+#define NOTE_F7  2794
+#define NOTE_FS7 2960
+#define NOTE_G7  3136
+#define NOTE_GS7 3322
+#define NOTE_A7  3520
+#define NOTE_AS7 3729
+#define NOTE_B7  3951
+#define NOTE_C8  4186
+#define NOTE_CS8 4435
+#define NOTE_D8  4699
+#define NOTE_DS8 4978
+#define REST     0
+
+// 🎹 ${songTitle} melodisi (Track ${track})
+int melody[] = {
+${melodyArray.join(',\n')}
+};
+
+// Oynatma değişkenleri  
+int totalNotes = sizeof(melody) / sizeof(melody[0]) / 2;
+int noteIndex = 0;
+bool isPlaying = false;
+bool songFinished = false;
+unsigned long previousMillis = 0;
+int noteDuration = 0;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(buzzerPin, OUTPUT);
+  
+  Serial.println("🎹 ================================");
+  Serial.println("    ${songTitle}");
+  Serial.println("🎹 ================================");
+  Serial.print("📊 Toplam nota: ");
+  Serial.println(totalNotes);
+  Serial.print("⚡ Tempo: ");
+  Serial.print(tempo);
+  Serial.println(" BPM");
+  Serial.print("🎼 Track: ");
+  Serial.println(${track});
+  Serial.println("🚀 Çalmaya başlıyor...");
+  Serial.println();
+}
+
+void loop() {
+  // Şarkı bittiyse hiçbir şey yapma
+  if (songFinished) {
+    return;
+  }
+  
+  unsigned long currentMillis = millis();
+  
+  // Yeni nota çalmaya başla
+  if (!isPlaying && noteIndex < totalNotes * 2) {
+    int thisNote = melody[noteIndex];
+    int divider = melody[noteIndex + 1];
+    
+    // Nota süresini hesapla (gerçek zamanlama - 100ms units)
+    noteDuration = divider * 100;
+    
+    if (thisNote == REST) {
+      // Sessizlik - sadece bekle
+      Serial.print("♪ REST (");
+      Serial.print(noteDuration);
+      Serial.println("ms)");
+    } else {
+      // Nota çal
+      tone(buzzerPin, thisNote, noteDuration * 0.85);
+      
+      Serial.print("♪ ");
+      Serial.print(thisNote);
+      Serial.print("Hz (");
+      Serial.print(noteDuration);
+      Serial.println("ms)");
+    }
+    
+    isPlaying = true;
+    previousMillis = currentMillis;
+  }
+  
+  // Nota/sessizlik süresi doldu mu?
+  if (isPlaying && (currentMillis - previousMillis >= noteDuration)) {
+    noTone(buzzerPin); // Herhangi bir durumda sesi kes
+    noteIndex += 2;
+    isPlaying = false;
+    
+    // Şarkı bitti mi?
+    if (noteIndex >= totalNotes * 2) {
+      songFinished = true;
+      Serial.println();
+      Serial.println("🎉 Şarkı tamamlandı!");
+      Serial.println("✋ Tekrar başlatmak için Reset'e bas");
+    }
+  }
+}`;
+        }
+
+        function downloadCode() {
+            if (!generatedCode) return;
+            
+            const blob = new Blob([generatedCode], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName + '.ino';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus('💾 Arduino kodu indirildi: ' + fileName + '.ino');
+        }
+
+        function copyCode() {
+            if (!generatedCode) return;
+            
+            navigator.clipboard.writeText(generatedCode).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ Kopyalandı!';
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+                
+                showStatus('📋 Arduino kodu panoya kopyalandı!');
+            }).catch(() => {
+                // Fallback eski tarayıcılar için
+                const textArea = document.createElement('textarea');
+                textArea.value = generatedCode;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                showStatus('📋 Arduino kodu panoya kopyalandı!');
+            });
+        }
+
+        function showProgress(show) {
+            document.getElementById('progressContainer').style.display = show ? 'block' : 'none';
+            if (!show) {
+                document.getElementById('progressBar').style.width = '0%';
+            }
+        }
+
+        function updateProgress(percent) {
+            document.getElementById('progressBar').style.width = percent + '%';
+        }
+
+        function showStatus(message) {
+            const statusDiv = document.getElementById('status');
+            const messageDiv = document.getElementById('statusMessage');
+            messageDiv.textContent = message;
+            statusDiv.style.display = 'block';
+            
+            // 3 saniye sonra gizle
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            document.querySelector('.container').appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
